@@ -12,8 +12,12 @@ def main():
     print(token)
     assert resp.status_code == 200
 
-    
+    headers["Authorization"] = f"Bearer {token}"
+    resp = requests.post(base_url + '/task', json={'task': 'newtask'}, headers=headers)
+    print(resp)
+
     return
+
 
 
 if __name__ == "__main__":

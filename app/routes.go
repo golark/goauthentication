@@ -7,9 +7,7 @@ func setupGinRouter(app application) *gin.Engine {
 	var router = gin.Default()
 
 	router.POST("/login", app.SignIn)
-	router.POST("/todo", app.CreateTodo)
-	router.POST("/logout", app.Logout)
-	router.POST("/refresh", app.Refresh)
+	router.POST("/task", app.CreateTask)
 
 	return router
 }

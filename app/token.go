@@ -1,21 +1,107 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v7"
-	"net/http"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-redis/redis/v7"
+	"github.com/satori/go.uuid"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"errors"
-	"github.com/satori/go.uuid"
 	"time"
 )
 
+
+type AuthToken struct {
+	Token string
+	Uid string
+	Exp int64
+}
+
+// NewAuthToken factory function
+func NewAuthToken(uid string, hmacSecret string) (*AuthToken, error) {
+
+	exp := time.Now().Add(time.Minute * 15).Unix()
+
+	claims := jwt.StandardClaims{
+		Audience:  "",
+		ExpiresAt: exp,
+		Id:        uid,
+		IssuedAt:  time.Now().Unix(),
+		Issuer:    "",
+		NotBefore: 0,
+		Subject:   "",
+	}
+	jToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenStr, err := jToken.SignedString([]byte(hmacSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthToken{tokenStr, uid, exp}, nil
+}
+
+func ExtractJWTFromRequest(r *http.Request) (string, error) {
+
+	// token should be in this form: 'Authorization': 'Bearer <YOUR_TOKEN_HERE>'
+	fullToken := r.Header.Get("Authorization")
+	splitToken := strings.Split(fullToken, "Bearer")
+
+	if len(splitToken) != 2 {
+		return "", errors.New("cant extract Authorisation TokenWithDetails from header")
+	}
+
+	return strings.TrimSpace(splitToken[1]), nil
+}
+
+func ValidateJWT(tokenStr string, hmacSecret string) (*jwt.Token, error) {
+
+	t, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(hmacSecret), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
+}
+
+
+func VerifyClaims(tokenStr string, hmacSecret string) error {
+
+	t, err := ValidateJWT(tokenStr, hmacSecret)
+	if err != nil {
+		return err
+	}
+
+	claims, ok := t.Claims.(jwt.MapClaims)
+	if !ok {
+		return errors.New("cant get standard claims")
+	}
+
+	// Validates time based claims "exp, iat, nbf".
+	err = claims.Valid()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
+// ExtractToken - extracts token from http header
 func ExtractToken(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
 	strArr := strings.Split(bearToken, " ")
+
 	if len(strArr) == 2 {
 		return strArr[1]
 	}
@@ -26,6 +112,7 @@ func ExtractToken(r *http.Request) string {
 // keyFunc will receive the parsed token and should return the key for validating.
 func VerifyToken(r *http.Request) (*jwt.Token, error) {
 	tokenString := ExtractToken(r)
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -109,6 +196,8 @@ type TokenDetails struct {
 
 
 func CreateToken(userid uint64) (*TokenDetails, error) {
+	var err error
+
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	td.AccessUuid = uuid.NewV4().String()
@@ -117,8 +206,7 @@ func CreateToken(userid uint64) (*TokenDetails, error) {
 	td.RefreshUuid = td.AccessUuid + "++" + strconv.Itoa(int(userid))
 
 
-	var err error
-	//Creating Access Token
+	//Creating Access TokenWithDetails
 	os.Setenv("ACCESS_SECRET", "jdnfksdmfksd") //this should be in an env file
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
@@ -130,7 +218,8 @@ func CreateToken(userid uint64) (*TokenDetails, error) {
 	if err != nil {
 		return nil, err
 	}
-	//Creating Refresh Token
+
+	//Creating Refresh TokenWithDetails
 	os.Setenv("REFRESH_SECRET", "mcmvmkmsdnfsdmfdsjf") //this should be in an env file
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = td.RefreshUuid

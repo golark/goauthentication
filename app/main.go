@@ -8,11 +8,13 @@ import (
 
 type application struct {
 	redisClient *redis.Client
+	hmacSecret  string
 }
 
 func main() {
 	redisHost := os.Getenv("REDIS_HOST_ADDRESS")
 	redisPass := os.Getenv("REDIS_PASSWORD")
+	hmacPassword := os.Getenv("HMAC_PASSWORD")
 
 	// step 1 - get redis client
 	if len(redisHost) == 0 {
@@ -35,6 +37,7 @@ func main() {
 	// step 2 - create application
 	app := application{
 		redisClient: redisClient,
+		hmacSecret:  hmacPassword,
 	}
 
 	// step 3 - setup and run router
