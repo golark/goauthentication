@@ -24,7 +24,7 @@ dockerinteractive:
 
 run: build
 	@echo "starting the apps"
-	@source env.sh && ./dist/$(API_APP)
+	@source env.sh && ./dist/$(API_APP) &
 	@source env.sh && ./dist/$(WEB_APP) -apiurl=$(API_URL)
 
 test:

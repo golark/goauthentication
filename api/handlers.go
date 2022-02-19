@@ -11,6 +11,7 @@ import (
 type User struct {
 	ID uint64       `json:"id"`
 	Username string `json:"username"`
+	Email string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -24,7 +25,7 @@ func (app *application) SignIn(c *gin.Context) {
 	}
 
 	// authenticate user
-	if user.Username != "admin" || user.Password != "admin" {
+	if user.Email != "admin@gmail.com" || user.Password != "admin" {
 		c.JSON(http.StatusUnauthorized, "invalid login details")
 		return
 	}
