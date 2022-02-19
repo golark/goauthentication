@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"github.com/go-redis/redis/v7"
 	"log"
 	"os"
+	"strconv"
 )
 
 type application struct {
@@ -15,6 +17,9 @@ func main() {
 	redisHost := os.Getenv("REDIS_HOST_ADDRESS")
 	redisPass := os.Getenv("REDIS_PASSWORD")
 	hmacPassword := os.Getenv("HMAC_PASSWORD")
+
+	var port int
+	flag.IntVar(&port, "port", 5023, "port to listen on")
 
 	// step 1 - get redis client
 	if len(redisHost) == 0 {
@@ -42,5 +47,5 @@ func main() {
 
 	// step 3 - setup and run router
 	router := setupGinRouter(app)
-	log.Fatal(router.Run(":8080"))
+	log.Fatal(router.Run(":" + strconv.Itoa(port)))
 }
