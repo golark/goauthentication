@@ -49,6 +49,7 @@ func (app *application) SignIn(c *gin.Context) {
 
 	resp := make(map[string]interface{})
 	resp["token"] = authToken.Token
+	resp["error"] = false
 	c.JSON(http.StatusOK, resp)
 }
 
