@@ -11,6 +11,7 @@ import (
 type application struct {
 	redisClient *redis.Client
 	hmacSecret  string
+	infoLog     *log.Logger
 }
 
 func main() {
@@ -40,9 +41,11 @@ func main() {
 	}(redisClient)
 
 	// step 2 - create application
+	infoLog := log.New(os.Stdout, "INFO:", log.Ldate)
 	app := application{
 		redisClient: redisClient,
 		hmacSecret:  hmacPassword,
+		infoLog:     infoLog,
 	}
 
 	// step 3 - setup and run router

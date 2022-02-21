@@ -20,11 +20,18 @@ func headerMiddleware() gin.HandlerFunc {
 	}
 }
 
+func (app *application) loggerMiddleware() gin.HandlerFunc {
+	return func(c * gin.Context) {
+		app.infoLog.Printf(c.Request.Method)
+	}
+}
+
 func setupGinRouter(app application) *gin.Engine {
 
 	var router = gin.Default()
 
 	router.Use(headerMiddleware())
+	router.Use(app.loggerMiddleware())
 	router.POST("/login", app.SignIn)
 	router.POST("/task", app.CreateTask)
 	router.POST("/authenticate", app.SignIn)

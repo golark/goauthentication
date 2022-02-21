@@ -1,0 +1,27 @@
+{{template "base" .}}
+
+{{define "title"}}
+    Algo
+{{end}}
+
+{{define "content"}}
+<div class="row">
+<div class="col-md-6 offset-md-3">
+
+    <div class="mb-3">
+        <label for="algo" class="form-label">Algorithm</label>
+        <input type="text" class="form-control" id="algo" name="algo"
+               required="" >
+    </div>
+
+    <a href="javascript:void(0)" class="btn btn-primary" onclick="val()">Submit</a>
+
+</div>
+</div>
+{{end}}
+
+{{define "js"}}
+<script>
+
+</script>
+{{end}}
